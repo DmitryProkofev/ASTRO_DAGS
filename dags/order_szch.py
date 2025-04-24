@@ -8,7 +8,7 @@ from airflow.operators.postgres_operator import PostgresOperator
 from airflow.decorators import task
 from airflow.models import Variable
 from datetime import datetime, timedelta
-from sql.order_czch.query import query, query1
+from sql.order_czch.query import query
 
 
 
@@ -30,7 +30,7 @@ def erp_api(query):
     if response.status_code == 200:
         return pd.DataFrame(response.json())
     else:
-        raise Exception('response.status_code != 200')
+        raise Exception(f'response.status_code != 200\nERROR:{response.text}')
     
 
 with DAG(
@@ -42,7 +42,7 @@ with DAG(
     
     @task
     def stage_base():
-        df = erp_api(query1)
+        df = erp_api(query)
 
         df['DATEOR'] = pd.to_datetime(df['DATEOR'], errors='coerce')
         df['DATEWISH'] = pd.to_datetime(df['DATEWISH'], errors='coerce')

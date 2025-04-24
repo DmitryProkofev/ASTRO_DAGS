@@ -30,7 +30,7 @@ def erp_api(query):
     if response.status_code == 200:
         return pd.DataFrame(response.json())
     else:
-        raise Exception('response.status_code != 200')
+        raise Exception(f'response.status_code != 200\nERROR:{response.text}')
 
 
 
