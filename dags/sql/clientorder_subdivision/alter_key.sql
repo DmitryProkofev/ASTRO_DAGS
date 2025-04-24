@@ -1,0 +1,1 @@
+ALTER TABLE airflow_data.clientorder_subdivision ADD CONSTRAINT clientorder_subdivision_key UNIQUE ("UID");

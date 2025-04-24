@@ -1,0 +1,1 @@
+ALTER TABLE airflow_data.order_cost ADD CONSTRAINT order_cost_key UNIQUE ("UID_Cost", "Num");

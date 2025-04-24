@@ -1,0 +1,11 @@
+INSERT INTO bi_data.clientorder_subdivision_1
+SELECT * FROM airflow_data.clientorder_subdivision
+ON CONFLICT ("UID") DO UPDATE
+SET 
+    "ORDER" = EXCLUDED."ORDER",
+   "DATEOR" = EXCLUDED."DATEOR",
+   "DATESHIP" = EXCLUDED."DATESHIP",
+   "DATEWISH" = EXCLUDED."DATEWISH",
+   "STATUS" = EXCLUDED. "STATUS",
+   "DOCUMENT" = EXCLUDED."DOCUMENT",
+   "OFFICE" = EXCLUDED."OFFICE";
