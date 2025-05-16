@@ -1,16 +1,8 @@
-INSERT INTO bi_data.order_cost_1
-SELECT * FROM airflow_data.order_cost
-ON CONFLICT ("UID_Cost", "Num") DO UPDATE
-SET 
-    "EXORDER" = EXCLUDED."EXORDER",
-    "UID_Order" = EXCLUDED."UID_Order",
-    "ORDER" = EXCLUDED."ORDER",
-    "OFFICE" = EXCLUDED."OFFICE",
-    "DOCUMENT" = EXCLUDED."DOCUMENT",
-    "Nomen" = EXCLUDED."Nomen",
-    "Count" = EXCLUDED."Count",
-    "DATEOR" = EXCLUDED."DATEOR",
-    "DATEEXOR" = EXCLUDED."DATEEXOR",
-    "DATESHIP" = EXCLUDED."DATESHIP",
-    "DATEFACT" = EXCLUDED."DATEFACT",
-    "DATEWISH" = EXCLUDED."DATEWISH";
+BEGIN;
+
+DELETE FROM bi_data.order_cost_copy;
+
+INSERT INTO bi_data.order_cost_copy
+SELECT *, NOW() FROM airflow_data.order_cost;
+
+COMMIT;

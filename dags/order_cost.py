@@ -14,7 +14,9 @@ from sql.order_cost.query import query
 
 
 args = {'owner': 'airflow',
-        'start_date': datetime.now()
+        'start_date': datetime.now(),
+        'retries': 3,  # Количество попыток
+        'retry_delay': timedelta(minutes=1)  # Задержка между попытками
         }
 
 
@@ -44,6 +46,7 @@ with DAG(
     
     @task
     def stage_base():
+
         df = erp_api(query)
 
         dtype = {'DATEWISH': sa.TIMESTAMP,
@@ -51,23 +54,37 @@ with DAG(
          'DATESHIP': sa.TIMESTAMP,
          'DATEEXOR': sa.TIMESTAMP,
          'DATEOR': sa.TIMESTAMP}
+        
 
         df.to_sql('order_cost', engine, if_exists='replace', index=False, schema='airflow_data',
                 chunksize=5000, dtype=dtype)
+        
 
 
-    alter_key_table = PostgresOperator(
-            task_id='alter_key_table',
+    calc_task = PostgresOperator(
+            task_id='calc_task',
             postgres_conn_id="postgres_user_con",
-            sql="sql/order_cost/alter_key.sql"
-        )
-    
-    update_data = PostgresOperator(
-            task_id='update_data',
-            postgres_conn_id="postgres_user_con",
-            sql="sql/order_cost/update_table.sql"
+            sql="sql/order_cost/query_calc_1.sql",
+            retries=3,
+            retry_delay=timedelta(minutes=1)
         )
 
+
+    calc_task_final = PostgresOperator(
+            task_id='calc_task_final',
+            postgres_conn_id="postgres_user_con",
+            sql="sql/order_cost/query_calc_final.sql",
+            retries=3,
+            retry_delay=timedelta(minutes=1)
+        )
+
+    cdm_task = PostgresOperator(
+            task_id='cdm_task',
+            postgres_conn_id="postgres_user_con",
+            sql="sql/order_cost/cdm_1.sql",
+            retries=3,
+            retry_delay=timedelta(minutes=1)
+        )
     
     
-    stage_base() >> alter_key_table >> update_data
+    stage_base() >> calc_task >> calc_task_final >> cdm_task
