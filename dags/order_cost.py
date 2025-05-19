@@ -63,7 +63,7 @@ with DAG(
 
     calc_task = PostgresOperator(
             task_id='calc_task',
-            postgres_conn_id="postgres_user_con",
+            postgres_conn_id="postgres_prod",
             sql="sql/order_cost/query_calc_1.sql",
             retries=3,
             retry_delay=timedelta(minutes=1)
@@ -72,7 +72,7 @@ with DAG(
 
     calc_task_final = PostgresOperator(
             task_id='calc_task_final',
-            postgres_conn_id="postgres_user_con",
+            postgres_conn_id="postgres_prod",
             sql="sql/order_cost/query_calc_final.sql",
             retries=3,
             retry_delay=timedelta(minutes=1)
@@ -80,7 +80,7 @@ with DAG(
 
     cdm_task = PostgresOperator(
             task_id='cdm_task',
-            postgres_conn_id="postgres_user_con",
+            postgres_conn_id="postgres_prod",
             sql="sql/order_cost/cdm_1.sql",
             retries=3,
             retry_delay=timedelta(minutes=1)
@@ -88,3 +88,4 @@ with DAG(
     
     
     stage_base() >> calc_task >> calc_task_final >> cdm_task
+

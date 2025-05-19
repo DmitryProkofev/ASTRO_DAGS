@@ -266,7 +266,7 @@ SELECT a1."UID_Расходника",
                             min(oc."DATESHIP") AS "DATESHIP",
                             min(oc."DATEFACT") AS "DATEFACT",
                             min(oc."DATEWISH") AS "DATEWISH"
-                           FROM airflow_data.order_cost oc
+                           FROM stage.order_cost oc
                           GROUP BY oc."UID_Cost", oc."EXORDER", oc."UID_Order", oc."ORDER", oc."DOCUMENT") b
                   GROUP BY b."UID_Order", b."ORDER", b."DOCUMENT") a) a1;
 
