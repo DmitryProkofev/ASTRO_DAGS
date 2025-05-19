@@ -1,6 +1,6 @@
 BEGIN;
 
-DELETE FROM calc.order_cost_spares;
+TRUNCATE TABLE calc.order_cost_spares;
 
 INSERT INTO calc.order_cost_spares
 SELECT a1."UID_Расходника",

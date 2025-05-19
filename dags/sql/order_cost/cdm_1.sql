@@ -1,6 +1,6 @@
 BEGIN;
 
-DELETE FROM cdm.order_finebi;
+TRUNCATE TABLE cdm.order_finebi;
 
 INSERT INTO cdm.order_finebi
 select of2.*, concat((case when of2."ВСЕ"<1 then 'меньше 1 дня' else null end), (case when trunc(of2."ВСЕ")=0 then null else trunc(of2."ВСЕ") end)) days,

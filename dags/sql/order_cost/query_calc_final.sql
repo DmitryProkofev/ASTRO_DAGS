@@ -1,6 +1,6 @@
 BEGIN;
 
-DELETE FROM calc.order_cost_final;
+TRUNCATE TABLE calc.order_cost_final;
 
 INSERT INTO calc.order_cost_final
 SELECT NULL::text AS "UID_Расходника",
