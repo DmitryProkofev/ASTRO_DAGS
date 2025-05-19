@@ -21,7 +21,7 @@ args = {'owner': 'airflow',
 
 
 
-con_data = Variable.get("postgres_connection_pandas")
+con_data = Variable.get("postgres_prod")
 engine = sa.create_engine(con_data, pool_pre_ping=True)
 
 
@@ -56,7 +56,7 @@ with DAG(
          'DATEOR': sa.TIMESTAMP}
         
 
-        df.to_sql('order_cost', engine, if_exists='replace', index=False, schema='airflow_data',
+        df.to_sql('order_cost', engine, if_exists='replace', index=False, schema='stage',
                 chunksize=5000, dtype=dtype)
         
 
