@@ -1,6 +1,6 @@
 #TODO  добавить расчеты для второй смены
 #TODO настроить ETL процесс
-#TODO добавить поле now('Europe/Samara') AS update_data в каждую таблицу
+#TODO добавить поле now('Europe/Samara') AS update_ad в каждую таблицу
 
 
 
@@ -21,13 +21,14 @@ create table staging.loaders_calls
     close_time DateTime,
     priority UInt8,
     container_qty UInt8,
-    update_data DateTime
+    update_ad DateTime
 ) 
 ENGINE = MergeTree()
 ORDER BY id;
 
 
---- здесь забираем данные по последнему id
+--- здесь забираем данные по времени закрытия вызова или по последнему id
+--- пока не знаю какой варик лучше
 insert into staging.loaders_calls
 SELECT
 	id,
@@ -41,7 +42,7 @@ SELECT
 	close_time,
 	priority,
 	container_qty,
-	now('Europe/Samara') AS update_data
+	now('Europe/Samara') AS update_ad
 FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -52,7 +53,8 @@ FROM
 	WHERE customer_id NOT IN (5773698501, 325813539)
   AND loader_id NOT IN (5773698501, 325813539)
 and close_time is not Null
-and id > (select max(id) from staging.loaders_calls);
+and toUnixTimestamp(close_time) > (select max(toUnixTimestamp(close_time)) from staging.loaders_calls);
+-- and id > (select max(id) from staging.loaders_calls);
 
 
 --- базовый DQ 
@@ -62,19 +64,6 @@ group by id HAVING count(*) > 1;
 
 
 
-
-
-
-
-
-
-
--- SELECT toUnixTimestamp(max(close_time)) FROM staging.loaders_calls
-
---WHERE p.idlotswpjob > (
---  SELECT max(idlotswpjob) FROM staging.pa_lotswp
-
-
 ---------------------------- таблица с информацией погрузчитков/заказчиков  ----------------------------------------
 #TODO тут ошибка где-то в этом запросе
 
@@ -82,7 +71,8 @@ CREATE TABLE dim_layer.dim_loaders_employes
 (
     id UInt64,
     operstor String,
-    is_loader UInt8
+    is_loader UInt8,
+    update_ad DateTime
 ) 
 ENGINE = MergeTree()
 ORDER BY id;
@@ -91,13 +81,14 @@ insert into dim_layer.dim_loaders_employes
 SELECT
 	tg_id,
 	operator,
-	is_loader
+	is_loader,
+	now('Europe/Samara') AS update_ad
 FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'pa_oper',
-	'compaint_bot_role',
-	'123123pegas',
+	'airflow_etl',
+	'airpegas',
 	'public')
 where
 	tg_id is not null OR tg_id NOT IN (5773698501, 325813539);
@@ -110,18 +101,25 @@ CREATE TABLE dim_layer.dim_loaders_workshops
 (
     id UInt32,
     worlshop_name String,
-    worlshop_description String
+    worlshop_description String,
+    update_ad DateTime
 ) 
 ENGINE = MergeTree()
 ORDER BY id;
 
 
-insert into dim_layer.dim_loaders_workshops
-select * from postgresql('10.1.11.17:5432',
+insert
+	into
+	dim_layer.dim_loaders_workshops
+select
+	*,
+	now('Europe/Samara') AS update_ad
+from
+	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'loaders_workshops',
-	'compaint_bot_role',
-	'123123pegas',
+	'airflow_etl',
+	'airpegas',
 	'public');
 
 
@@ -130,19 +128,27 @@ select * from postgresql('10.1.11.17:5432',
 CREATE TABLE dim_layer.dim_loaders_reasons
 (
     id UInt32,
-    reason String
+    reason String, 
+    update_ad DateTime
 ) 
 ENGINE = MergeTree()
 ORDER BY id;
 
 
 
-insert into dim_layer.dim_loaders_reasons
-select id, reason from postgresql('10.1.11.17:5432',
+insert
+	into
+	dim_layer.dim_loaders_reasons
+select
+	id,
+	reason,
+	now('Europe/Samara') AS update_ad
+from
+	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'loaders_reasons',
-	'compaint_bot_role',
-	'123123pegas',
+	'airflow_etl',
+	'airpegas',
 	'public');
 
 
@@ -197,8 +203,8 @@ FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'calendar_minute_grain',
-	'compaint_bot_role',
-	'123123pegas',
+	'airflow_etl',
+	'airpegas',
 	'airflow_data')
 ;
 
@@ -209,18 +215,27 @@ FROM
 CREATE TABLE IF NOT EXISTS dim_layer.dim_priority (
 	id UInt8,
     priority_name String,
-    priority_desc String
+    priority_desc String,
+    updated_at DateTime
 )
 ENGINE = MergeTree
 ORDER BY (id);
 
 
-insert into dim_layer.dim_priority
-select id, priority_name, priority_desc from postgresql('10.1.11.17:5432',
+insert
+	into
+	dim_layer.dim_priority
+select
+	id,
+	priority_name,
+	priority_desc,
+	now('Europe/Samara') AS update_ad
+from
+	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'loaders_call_priorities',
-	'compaint_bot_role',
-	'123123pegas',
+	'airflow_etl',
+	'airpegas',
 	'public');
 
 
@@ -552,7 +567,7 @@ FROM (
 ) t;
 
 
-
+EXPLAIN PLAN
 SELECT id, MAX(update_data)
   FROM staging.loaders_calls
   GROUP BY id;
