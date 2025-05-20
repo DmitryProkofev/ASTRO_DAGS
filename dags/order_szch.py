@@ -13,12 +13,14 @@ from sql.order_czch.query import query
 
 
 args = {'owner': 'airflow',
-        'start_date': datetime.now()
+        'start_date': datetime.now(),
+        'retries': 3,  # Количество попыток
+        'retry_delay': timedelta(minutes=1)  # Задержка между попытками
         }
 
 
 
-con_data = Variable.get("postgres_connection_pandas")
+con_data = Variable.get("postgres_prod")
 engine = sa.create_engine(con_data, pool_pre_ping=True)
 
 
@@ -56,12 +58,12 @@ with DAG(
          'DATEEXOR': sa.TIMESTAMP,
          'DATESHIP': sa.TIMESTAMP}
 
-        df.to_sql('order_szch', engine, if_exists='replace', index=False, schema='airflow_data',
+        df.to_sql('order_szch', engine, if_exists='replace', index=False, schema='stage',
                 chunksize=5000, dtype=dtype)
         
     update_table = PostgresOperator(
             task_id='update_table',
-            postgres_conn_id="postgres_user_con",
+            postgres_conn_id="postgres_prod",
             sql="sql/order_czch/order_czch.sql"
         )
         

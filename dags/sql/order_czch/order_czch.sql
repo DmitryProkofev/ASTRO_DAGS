@@ -1,9 +1,9 @@
 BEGIN;
 
-DELETE FROM bi_data.order_szch;
+TRUNCATE TABLE calc.order_szch;
 
-INSERT INTO bi_data.order_szch 
-SELECT *
-FROM airflow_data.order_szch;
+INSERT INTO calc.order_szch 
+SELECT *, NOW() as updated_ad
+FROM stage.order_szch;
 
 COMMIT;
