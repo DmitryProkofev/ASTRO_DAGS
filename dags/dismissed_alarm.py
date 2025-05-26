@@ -59,7 +59,7 @@ WHERE e.rn = 1
 
 # Создание DAG
 with DAG(
-    'test_email_dag',
+    'dismissed_alarm',
     default_args=default_args,
     description='DAG оповещения об уволенных сотрудниках',
     schedule_interval='@daily',
