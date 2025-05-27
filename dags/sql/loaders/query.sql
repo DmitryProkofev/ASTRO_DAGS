@@ -1,9 +1,11 @@
 #TODO  добавить расчеты для второй смены
 #TODO настроить ETL процесс
-#TODO добавить поле now('Europe/Samara') AS update_ad в каждую таблицу
+#TODO добавить поле now('Europe/Samara') AS update_data в каждую таблицу
 
 
-
+CREATE DATABASE bronze_layer;
+CREATE DATABASE silver_layer;
+CREATE DATABASE gold_layer;
 
 
 
@@ -21,15 +23,15 @@ create table staging.loaders_calls
     close_time DateTime,
     priority UInt8,
     container_qty UInt8,
-    update_ad DateTime
+    update_data DateTime
 ) 
 ENGINE = MergeTree()
 ORDER BY id;
 
+drop table staging.loaders_calls;
 
---- здесь забираем данные по времени закрытия вызова или по последнему id
---- пока не знаю какой варик лучше
-insert into staging.loaders_calls
+--- здесь забираем данные по последнему id
+create table staging.loaders_calls engine=MergeTree order by id as 
 SELECT
 	id,
 	open_time,
@@ -42,19 +44,21 @@ SELECT
 	close_time,
 	priority,
 	container_qty,
-	now('Europe/Samara') AS update_ad
+	now('Europe/Samara') AS update_data
 FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'loader_calls',
 	'airflow_etl',
 	'airpegas',
-	'public')
+	'public');
+	
+	
+	-- вывести в обработку на другом слое
 	WHERE customer_id NOT IN (5773698501, 325813539)
   AND loader_id NOT IN (5773698501, 325813539)
 and close_time is not Null
-and toUnixTimestamp(close_time) > (select max(toUnixTimestamp(close_time)) from staging.loaders_calls);
--- and id > (select max(id) from staging.loaders_calls);
+and id > (select max(id) from staging.loaders_calls);
 
 
 --- базовый DQ 
@@ -67,22 +71,23 @@ group by id HAVING count(*) > 1;
 ---------------------------- таблица с информацией погрузчитков/заказчиков  ----------------------------------------
 #TODO тут ошибка где-то в этом запросе
 
-CREATE TABLE dim_layer.dim_loaders_employes
+CREATE TABLE staging.dim_loaders_employes
 (
     id UInt64,
     operstor String,
     is_loader UInt8,
-    update_ad DateTime
+    update_data DateTime
 ) 
-ENGINE = MergeTree()
+ENGINE = ReplacingMergeTree(update_data)
 ORDER BY id;
 
-insert into dim_layer.dim_loaders_employes
+
+insert into staging.dim_loaders_employes
 SELECT
 	tg_id,
 	operator,
 	is_loader,
-	now('Europe/Samara') AS update_ad
+	now('Europe/Samara') AS update_data
 FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -95,6 +100,13 @@ where
 
 
 
+--  DQ
+
+select id, count(*) from dim_layer.dim_loaders_employes lc 
+group by id HAVING count(*) > 1;
+
+
+
 ---------------------------- таблица Перечень местоположений для вызова погрузчиков  --------------------------------------
 
 CREATE TABLE dim_layer.dim_loaders_workshops
@@ -102,9 +114,9 @@ CREATE TABLE dim_layer.dim_loaders_workshops
     id UInt32,
     worlshop_name String,
     worlshop_description String,
-    update_ad DateTime
+    update_data DateTime
 ) 
-ENGINE = MergeTree()
+ENGINE = ReplacingMergeTree(update_data)
 ORDER BY id;
 
 
@@ -113,7 +125,7 @@ insert
 	dim_layer.dim_loaders_workshops
 select
 	*,
-	now('Europe/Samara') AS update_ad
+	now('Europe/Samara') AS update_data
 from
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -124,14 +136,15 @@ from
 
 
 
+
 --------------------------------------------------- Таблица причин для вызовов погрузчиков -------------------------------------
 CREATE TABLE dim_layer.dim_loaders_reasons
 (
     id UInt32,
-    reason String, 
-    update_ad DateTime
+    reason String,
+    update_data DateTime
 ) 
-ENGINE = MergeTree()
+ENGINE = ReplacingMergeTree(update_data)
 ORDER BY id;
 
 
@@ -142,7 +155,7 @@ insert
 select
 	id,
 	reason,
-	now('Europe/Samara') AS update_ad
+	now('Europe/Samara') AS update_data
 from
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -203,8 +216,8 @@ FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
 	'calendar_minute_grain',
-	'airflow_etl',
-	'airpegas',
+	'compaint_bot_role',
+	'123123pegas',
 	'airflow_data')
 ;
 
@@ -216,9 +229,9 @@ CREATE TABLE IF NOT EXISTS dim_layer.dim_priority (
 	id UInt8,
     priority_name String,
     priority_desc String,
-    updated_at DateTime
+    update_data DateTime
 )
-ENGINE = MergeTree
+ENGINE = ReplacingMergeTree(update_data)
 ORDER BY (id);
 
 
@@ -229,7 +242,7 @@ select
 	id,
 	priority_name,
 	priority_desc,
-	now('Europe/Samara') AS update_ad
+	now('Europe/Samara') AS update_data
 from
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -238,13 +251,22 @@ from
 	'airpegas',
 	'public');
 
+select * from dim_layer.dim_priority
+where max(update_data);
+
 
 
 
 
 --------------------------------------------------------- TАБЛИЦА ФАКТОВ ----------------------------------------
 
+#TODO добавить FINAL
+#TODO тут нужен DQ обязательно
 
+
+
+#TODO тут будут вставляться только новые записи
+--insert into stg_facts.fact_loader_calls
 create table stg_facts.fact_loader_calls engine=MergeTree order by call_id as 
 SELECT
 	lc.id as call_id, 
@@ -259,20 +281,21 @@ SELECT
 	c3.DateKey as datetime_key_close,		 -- Ключ таблицы измерений даты (закрытие вызова)
 	cmg3.TimeKey as time_key_close,	 		-- Ключ таблицы измерений времени (закрытие вызова)
 	dp.id as priority_id,
-	lc.container_qty as container_qty
+	lc.container_qty as container_qty,
+	now('Europe/Samara') AS update_data
 FROM
-	staging.loaders_calls lc
+	staging.loaders_calls FINAL lc
 left join dim_layer.calendar c ON
 	c.`Date` = toDate(formatDateTime(lc.open_time, '%Y-%m-%d'))
 left join dim_layer.calendar_minute_grain cmg ON
 	cmg.`Time` = formatDateTime(lc.open_time, '%H:%i')
-left join dim_layer.dim_loaders_employes dle ON
+left join dim_layer.dim_loaders_employes FINAL dle ON
 	dle.id = lc.customer_id
-left join dim_layer.dim_loaders_reasons dlr ON
+left join dim_layer.dim_loaders_reasons FINAL dlr ON
 	dlr.id = lc.call_reason_id
-left join dim_layer.dim_loaders_workshops dlw ON
+left join dim_layer.dim_loaders_workshops FINAL dlw ON
 	dlw.id = lc.workshop_id
-left join dim_layer.calendar c2 ON
+left join dim_layer.calendar FINAL c2 ON
 	c2.`Date` = toDate(formatDateTime(lc.taken_time, '%Y-%m-%d'))
 left join dim_layer.calendar_minute_grain cmg2 ON
 	cmg2.`Time` = formatDateTime(lc.taken_time, '%H:%i')
@@ -280,7 +303,7 @@ left join dim_layer.calendar c3 ON
 	c3.`Date` = toDate(formatDateTime(lc.close_time, '%Y-%m-%d'))
 left join dim_layer.calendar_minute_grain cmg3 ON
 	cmg3.`Time` = formatDateTime(lc.close_time, '%H:%i')
-left join dim_layer.dim_priority dp ON
+left join dim_layer.dim_priority FINAL dp ON
 	dp.id = lc.priority
 ;
 
@@ -567,7 +590,7 @@ FROM (
 ) t;
 
 
-EXPLAIN PLAN
+
 SELECT id, MAX(update_data)
   FROM staging.loaders_calls
   GROUP BY id;

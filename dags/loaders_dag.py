@@ -3,6 +3,7 @@ from airflow.operators.python import PythonOperator
 from datetime import datetime
 from airflow.exceptions import AirflowException
 import logging
+from airflow.utils.task_group import TaskGroup
 
 
 def query_clickhouse(sql_path: str):
@@ -37,4 +38,33 @@ with DAG(
         op_kwargs={'sql_path': 'dags/sql/loaders/stage_base.sql'},  # Передача контекста в kwargs
     )
 
-    stage_base
+    with TaskGroup("group_1", tooltip="Группа задач 1") as group_1:
+        dim_loaders_employes = PythonOperator(
+            task_id='dim_loaders_employes',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql_path': 'dags/sql/loaders/dim_loaders_employes.sql'},  # Передача контекста в kwargs
+        )
+
+        dim_loaders_workshops = PythonOperator(
+            task_id='dim_loaders_workshops',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql_path': 'dags/sql/loaders/dim_loaders_workshops.sql'},  # Передача контекста в kwargs
+        )
+
+        dim_loaders_reasons = PythonOperator(
+            task_id='dim_loaders_reasons',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql_path': 'dags/sql/loaders/dim_loaders_reasons.sql'},  # Передача контекста в kwargs
+        )
+
+        dim_priority = PythonOperator(
+            task_id='dim_priority',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql_path': 'dags/sql/loaders/dim_priority.sql'},  # Передача контекста в kwargs
+        )
+
+
+
+
+
+    stage_base >> group_1
