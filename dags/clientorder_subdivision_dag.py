@@ -9,18 +9,18 @@ from airflow.decorators import task
 from airflow.models import Variable
 from datetime import datetime, timedelta
 from sql.clientorder_subdivision.query import query
+import logging
 
 
 
 args = {'owner': 'airflow',
-        'start_date': datetime.now()
+        'start_date': datetime(2025, 4, 10, 5, 59)
         }
 
 
 
-con_data = Variable.get("postgres_connection_pandas")
+con_data = Variable.get("postgres_prod")
 engine = sa.create_engine(con_data, pool_pre_ping=True)
-
 
 
 def erp_api(query):
@@ -30,7 +30,6 @@ def erp_api(query):
         return pd.DataFrame(response.json())
     else:
         raise Exception(f'HTTP Error: {response.status_code}, {response.text}')
-
 
 
 
@@ -48,24 +47,19 @@ with DAG(
         dtype = {'DATEOR': sa.TIMESTAMP,
          'DATESHIP': sa.TIMESTAMP,
          'DATEWISH': sa.TIMESTAMP}
+        
+        df.to_sql('clientorder_subdivision', engine, if_exists='replace', index=False, schema='stage', chunksize=5000, dtype=dtype)
 
-        df.to_sql('clientorder_subdivision', engine, if_exists='replace', index=False, schema='airflow_data',
-                chunksize=5000, dtype=dtype)
 
-    alter_key_table = PostgresOperator(
-            task_id='alter_key_table',
-            postgres_conn_id="postgres_user_con",
-            sql="sql/clientorder_subdivision/alter_key.sql"
-        )
-    
-    update_data = PostgresOperator(
-            task_id='update_data',
-            postgres_conn_id="postgres_user_con",
-            sql="sql/clientorder_subdivision/update_table.sql"
+        
+    calc_task = PostgresOperator(
+            task_id='calc_task',
+            postgres_conn_id="postgres_prod",
+            sql="sql/clientorder_subdivision/query_sql.sql",
+            retries=3,
+            retry_delay=timedelta(minutes=1)
         )
 
     
     
-    stage_base() >> alter_key_table >> update_data
-
-    ##
+    stage_base() >> calc_task

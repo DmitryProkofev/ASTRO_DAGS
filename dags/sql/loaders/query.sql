@@ -1,6 +1,4 @@
 #TODO  добавить расчеты для второй смены
-#TODO настроить ETL процесс
-#TODO добавить поле now('Europe/Samara') AS update_data в каждую таблицу
 
 
 CREATE DATABASE bronze_layer;
@@ -8,6 +6,7 @@ CREATE DATABASE silver_layer;
 CREATE DATABASE gold_layer;
 
 
+#TODO используем инкрементальную загрузку
 
 --- Таблица погрузчиков в первый базовый staging слой clickhouse без обработки, НО все же с выборкой определенных полей
 create table staging.loaders_calls
@@ -28,10 +27,11 @@ create table staging.loaders_calls
 ENGINE = MergeTree()
 ORDER BY id;
 
+
 drop table staging.loaders_calls;
 
 --- здесь забираем данные по последнему id
-create table staging.loaders_calls engine=MergeTree order by id as 
+create table bronze_layer.loaders_calls engine=MergeTree order by id as 
 SELECT
 	id,
 	open_time,
@@ -51,10 +51,18 @@ FROM
 	'loader_calls',
 	'airflow_etl',
 	'airpegas',
-	'public');
+	'public')
+where close_time is not Null;
+
+
+
+
+and (select max(id) from staging.loaders_calls);
+
+DROP TABLE bronze_layer.loaders_calls;
 	
 	
-	-- вывести в обработку на другом слое
+	-- вывести в обработку на другом слое. в серебряный слой
 	WHERE customer_id NOT IN (5773698501, 325813539)
   AND loader_id NOT IN (5773698501, 325813539)
 and close_time is not Null
