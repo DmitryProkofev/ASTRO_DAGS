@@ -20,6 +20,28 @@ def query_clickhouse(sql_path: str):
 
 
 
+cdm_2_query = """BEGIN
+        TRUNCATE TABLE DATA_EX.EMPLOYES_ERP;
+
+        INSERT INTO DATA_EX.EMPLOYES_ERP
+        SELECT SURNAME, NAME, PATRONYMIC, FIO, BARCODE, UID_PHYS, CURRENT_TIME
+        FROM (
+        SELECT
+        	eb.*,
+        	ROW_NUMBER() OVER (PARTITION BY UID_PHYS ORDER BY CURRENT_TIME DESC) AS ROW_num
+        FROM
+        	DATA_EX.EMPLOYES_BARCODES eb)
+        WHERE ROW_NUM = 1;
+
+        COMMIT;
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Ошибка: ' || SQLERRM);
+            RAISE; END; """
+
+
 default_args = {
     'start_date': datetime.now(),
 }
@@ -68,3 +90,6 @@ with DAG(
 
 
     stage_base >> group_1
+
+
+
