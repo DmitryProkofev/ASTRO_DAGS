@@ -1,6 +1,6 @@
 #
 
-CREATE TABLE bronze_layer.loaders_workshops_bronze_new engine = MergeTree
+CREATE TABLE bronze_layer.loaders_workshops_new engine = MergeTree
 ORDER BY
 id AS
 SELECT
@@ -18,12 +18,11 @@ FROM
 		max(toUnixTimestamp(updated_at))
 	from
 		bronze_layer.loaders_workshops_bronze); 
-		#TODO дату брать по таблице измерений в этом запросе
+		#TODO дату брать по таблице измерений в этом запросе, хотя с другой стороны зачем, если есть предыдущая версия загрузки, от которой мы можем отталкиваться
 
 
-RENAME TABLE bronze_layer.loaders_workshops_bronze TO bronze_layer.loaders_workshops_bronze_old;
+RENAME TABLE bronze_layer.loaders_workshops TO bronze_layer.loaders_workshops_old;
 
 
-RENAME TABLE bronze_layer.loaders_workshops_bronze_new TO bronze_layer.loaders_workshops_bronze;
+RENAME TABLE bronze_layer.loaders_workshops_new TO bronze_layer.loaders_workshops;
 
-#TODO далее сразу в gold_layer с необходимыми полями как таблицу измерений

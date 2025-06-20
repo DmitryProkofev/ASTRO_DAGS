@@ -1,6 +1,6 @@
 #
 
-CREATE TABLE bronze_layer.loaders_call_priorities_bronze_new engine = MergeTree
+CREATE TABLE bronze_layer.loaders_call_priorities_new engine = MergeTree
 ORDER BY
 id AS
 SELECT
@@ -20,9 +20,8 @@ FROM
 		bronze_layer.loaders_call_priorities_bronze);
 
 
-RENAME TABLE bronze_layer.loaders_call_priorities_bronze TO bronze_layer.loaders_call_priorities_bronze_old;
+RENAME TABLE bronze_layer.loaders_call_priorities TO bronze_layer.loaders_call_priorities_old;
 
 
-RENAME TABLE bronze_layer.loaders_call_priorities_bronze_new TO bronze_layer.loaders_call_priorities_bronze;
+RENAME TABLE bronze_layer.loaders_call_priorities_new TO bronze_layer.loaders_call_priorities;
 
-#TODO далее сразу в gold_layer с необходимыми полями как таблицу измерений

@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS bronze_layer.pa_oper_new engine=MergeTree order by idwork AS
 SELECT
     *,
-    now('Europe/Samara') AS update_data
+    now('Europe/Samara') AS update_etl
 FROM  postgresql('10.1.11.17:5432',
 	'AGRO',
 	'pa_oper',
@@ -19,7 +19,7 @@ FROM  postgresql('10.1.11.17:5432',
 RENAME TABLE bronze_layer.pa_oper TO bronze_layer.pa_oper_old;
 
 
-RENAME TABLE bronze_layer.pa_oper_new TO bronze_layer.pa_oper_bronze;
+RENAME TABLE bronze_layer.pa_oper_new TO bronze_layer.pa_oper;
 
 
 
