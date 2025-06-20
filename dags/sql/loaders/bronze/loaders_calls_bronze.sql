@@ -1,9 +1,10 @@
 #TODO используем инкрементальную загрузку
 
 
---- здесь забираем данные по последнему id
---create table bronze_layer.loaders_calls engine=MergeTree order by id as
-insert into bronze_layer.loaders_calls 
+create table bronze_layer.loaders_calls_new engine = MergeTree
+order by
+id as
+---insert into bronze_layer.loaders_calls 
 SELECT
 	id,
 	open_time,
@@ -16,7 +17,8 @@ SELECT
 	close_time,
 	priority,
 	container_qty,
-	now('Europe/Samara') AS update_data
+	updated_at,
+	now('Europe/Samara') AS update_etl
 FROM
 	postgresql('10.1.11.17:5432',
 	'AGRO',
@@ -24,8 +26,15 @@ FROM
 	'airflow_etl',
 	'airpegas',
 	'public')
-where close_time is not Null
-and id > (select max(id) from silver_layer.loaders_calls);
+where
+	close_time is not Null and
+	toUnixTimestamp(updated_at) > (
+	select
+		max(toUnixTimestamp(updated_at))
+	from
+		bronze_layer.loaders_calls);
 
+RENAME TABLE bronze_layer.loaders_calls TO bronze_layer.loaders_calls_old;
 
---TRUNCATE TABLE bronze_layer.loaders_calls;
+RENAME TABLE bronze_layer.loaders_calls_new TO bronze_layer.loaders_calls;
+

@@ -1,11 +1,5 @@
---какие варики обновления данной таблицы:
--- - drop/insert
--- - insert/optimize
 
-
-drop table if exists bronze_layer.pa_oper;
-
-CREATE TABLE IF NOT EXISTS bronze_layer.pa_oper engine=MergeTree order by idwork AS
+CREATE TABLE IF NOT EXISTS bronze_layer.pa_oper_new engine=MergeTree order by idwork AS
 SELECT
     *,
     now('Europe/Samara') AS update_data
@@ -14,5 +8,18 @@ FROM  postgresql('10.1.11.17:5432',
 	'pa_oper',
 	'airflow_etl',
 	'airpegas',
-	'public');
+	'public')
+	WHERE toUnixTimestamp(dtmodified) > (
+	select
+		max(toUnixTimestamp(dtmodified))
+	from
+		bronze_layer.pa_oper);
+
+
+RENAME TABLE bronze_layer.pa_oper TO bronze_layer.pa_oper_old;
+
+
+RENAME TABLE bronze_layer.pa_oper_new TO bronze_layer.pa_oper_bronze;
+
+
 
