@@ -1,12 +1,10 @@
 #TODO запихнуть DQ между слоем silver и gold
 
-
-
 -- выполняем дедубликацию через оконную функцию,
 -- фильтруем тестовые вызовы по id телеги
 
 
-create table silver_layer.loaders_calls engine=MergeTree order by id as 
+create table silver_layer.loaders_calls_new engine=MergeTree order by id as 
 SELECT
 	id,
 	open_time,
@@ -40,6 +38,21 @@ FROM
 ) sub
 WHERE
 	rn = 1;
+
+
+RENAME TABLE silver_layer.loaders_calls TO silver_layer.loaders_calls_old;
+
+
+RENAME TABLE silver_layer.loaders_calls_new TO silver_layer.loaders_calls;
+
+
+
+
+
+
+
+
+
 
 
 
