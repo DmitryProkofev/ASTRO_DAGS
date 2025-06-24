@@ -1,4 +1,3 @@
-#
 
 CREATE TABLE bronze_layer.loaders_workshops_new engine = MergeTree
 ORDER BY
@@ -15,14 +14,14 @@ FROM
 	'public')
 	WHERE toUnixTimestamp(updated_at) > (
 	select
-		max(toUnixTimestamp(updated_at))
+		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_workshops_bronze); 
-		#TODO дату брать по таблице измерений в этом запросе, хотя с другой стороны зачем, если есть предыдущая версия загрузки, от которой мы можем отталкиваться
+		bronze_layer.loaders_workshops); 
+		
 
 
-RENAME TABLE bronze_layer.loaders_workshops TO bronze_layer.loaders_workshops_old;
-
-
-RENAME TABLE bronze_layer.loaders_workshops_new TO bronze_layer.loaders_workshops;
+--RENAME TABLE bronze_layer.loaders_workshops TO bronze_layer.loaders_workshops_old;
+--
+--
+--RENAME TABLE bronze_layer.loaders_workshops_new TO bronze_layer.loaders_workshops;
 

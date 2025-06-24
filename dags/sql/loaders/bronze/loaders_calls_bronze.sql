@@ -1,6 +1,5 @@
-#TODO используем инкрементальную загрузку
 
-
+--используем инкрементальную загрузку
 create table bronze_layer.loaders_calls_new engine = MergeTree
 order by
 id as
@@ -30,11 +29,14 @@ where
 	close_time is not Null and
 	toUnixTimestamp(updated_at) > (
 	select
-		max(toUnixTimestamp(updated_at))
+		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
 		bronze_layer.loaders_calls);
 
-RENAME TABLE bronze_layer.loaders_calls TO bronze_layer.loaders_calls_old;
 
-RENAME TABLE bronze_layer.loaders_calls_new TO bronze_layer.loaders_calls;
+
+
+--RENAME TABLE bronze_layer.loaders_calls TO bronze_layer.loaders_calls_old;
+--
+--RENAME TABLE bronze_layer.loaders_calls_new TO bronze_layer.loaders_calls;
 

@@ -1,4 +1,4 @@
-#TODO на этом сллое происходит дедубликация через оконную функцию
+-- TODO на этом сллое происходит дедубликация через оконную функцию
 
 
 CREATE TABLE silver_layer.loaders_reasons_new engine = MergeTree
@@ -23,11 +23,11 @@ FROM
 		bronze_layer.loaders_reasons) sub
 where rn = 1;
 
-
-RENAME TABLE silver_layer.loaders_reasons TO silver_layer.loaders_reasons_old;
-
-
-RENAME TABLE silver_layer.loaders_reasons_new TO silver_layer.loaders_reasons;
+--
+--RENAME TABLE silver_layer.loaders_reasons TO silver_layer.loaders_reasons_old;
+--
+--
+--RENAME TABLE silver_layer.loaders_reasons_new TO silver_layer.loaders_reasons;
 
 
 

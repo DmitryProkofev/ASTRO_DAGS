@@ -602,3 +602,16 @@ FROM (
 SELECT id, MAX(update_data)
   FROM staging.loaders_calls
   GROUP BY id;
+
+
+
+
+TRUNCATE TABLE bronze_layer.pa_oper;
+TRUNCATE TABLE bronze_layer.loaders_call_priorities;
+TRUNCATE TABLE bronze_layer.loaders_calls;
+TRUNCATE TABLE bronze_layer.loaders_reasons;
+TRUNCATE TABLE bronze_layer.loaders_workshops;
+
+
+
+DROP TABLE IF EXISTS bronze_layer.pa_oper_old;

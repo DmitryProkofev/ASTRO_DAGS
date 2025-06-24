@@ -1,6 +1,6 @@
 --убираем возможные дубликаты, null, не авторизованных и разрабов/админов - делать на уровне записи в таблицу фактов
 
-#TODO на этом сллое происходит дедубликация через оконную функцию
+--TODO на этом сллое происходит дедубликация через оконную функцию
 
 
 
@@ -45,12 +45,12 @@ SELECT
 where rn = 1;
 
 
-
-
-RENAME TABLE silver_layer.pa_oper TO silver_layer.pa_oper_old;
-
-
-RENAME TABLE silver_layer.pa_oper_new TO silver_layer.pa_oper;
+--
+--
+--RENAME TABLE silver_layer.pa_oper TO silver_layer.pa_oper_old;
+--
+--
+--RENAME TABLE silver_layer.pa_oper_new TO silver_layer.pa_oper;
 
 
 

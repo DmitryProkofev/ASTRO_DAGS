@@ -1,4 +1,4 @@
-#TODO запихнуть DQ между слоем silver и gold
+-- TODO запихнуть DQ между слоем silver и gold
 
 -- выполняем дедубликацию через оконную функцию,
 -- фильтруем тестовые вызовы по id телеги
@@ -39,11 +39,11 @@ FROM
 WHERE
 	rn = 1;
 
-
-RENAME TABLE silver_layer.loaders_calls TO silver_layer.loaders_calls_old;
-
-
-RENAME TABLE silver_layer.loaders_calls_new TO silver_layer.loaders_calls;
+--
+--RENAME TABLE silver_layer.loaders_calls TO silver_layer.loaders_calls_old;
+--
+--
+--RENAME TABLE silver_layer.loaders_calls_new TO silver_layer.loaders_calls;
 
 
 

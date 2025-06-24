@@ -1,4 +1,3 @@
-#
 
 CREATE TABLE bronze_layer.loaders_call_priorities_new engine = MergeTree
 ORDER BY
@@ -15,13 +14,13 @@ FROM
 	'public')
 	WHERE toUnixTimestamp(updated_at) > (
 	select
-		max(toUnixTimestamp(updated_at))
+		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_call_priorities_bronze);
+		bronze_layer.loaders_call_priorities);
 
 
-RENAME TABLE bronze_layer.loaders_call_priorities TO bronze_layer.loaders_call_priorities_old;
-
-
-RENAME TABLE bronze_layer.loaders_call_priorities_new TO bronze_layer.loaders_call_priorities;
+--RENAME TABLE bronze_layer.loaders_call_priorities TO bronze_layer.loaders_call_priorities_old;
+--
+--
+--RENAME TABLE bronze_layer.loaders_call_priorities_new TO bronze_layer.loaders_call_priorities;
 

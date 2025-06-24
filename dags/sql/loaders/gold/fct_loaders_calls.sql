@@ -44,4 +44,6 @@ left join gold_layer.dim_loaders_call_priorities dlcp ON
 lc.priority = dlcp.id;
 
 
+select * from bronze_layer.loaders_call_priorities lcp;
+
 #TODO поля с предрассчитаныыми данными в слой витрин запилить (cdm-слой)
