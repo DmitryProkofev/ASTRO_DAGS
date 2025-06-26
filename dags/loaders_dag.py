@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime
+from airflow.operators.empty import EmptyOperator
 
 def query_clickhouse(sql_path: str = None, sql: str = None):
     from custom_utils.clickhouse_client import ClickHouseClient
@@ -29,7 +30,7 @@ def check_data_exists(sql_path: str):
         logging.error(f"Ошибка выполнения запроса: {e}")
         raise
 
-def create_tasks_for_table(table_name: str):
+def create_tasks_for_table(table_name: str, exception_table=None):
     check = ShortCircuitOperator(
         task_id=f'check_{table_name}',
         python_callable=check_data_exists,
@@ -84,12 +85,24 @@ def create_tasks_for_table(table_name: str):
         op_kwargs={'sql': f'RENAME TABLE silver_layer.{table_name}_new TO silver_layer.{table_name}'},
     )
 
+    if table_name != exception_table:
+
+        dimension = PythonOperator(
+            task_id=f'dimenension_{table_name}',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql_path': f'dags/sql/loaders/gold/dim_{table_name}.sql'},
+        )
+
+    else:
+
+        dimension = EmptyOperator(task_id="next_task", dag=dag)
+
 
     # Определяем зависимости между задачами одной таблицы
-    check >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> silver >> silver_drop_table >> silver_rename_old >> silver_rename_new
+    check >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> silver >> silver_drop_table >> silver_rename_old >> silver_rename_new >> dimension
 
     # Возвращаем все задачи, чтобы потом связать их между собой при необходимости
-    return check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old , silver_rename_new
+    return check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old , silver_rename_new, dimension
 
 
 default_args = {
@@ -104,7 +117,7 @@ with DAG(
     tags=['clickhouse'],
 ) as dag:
 
-    with TaskGroup('bronze_layer') as all_loaders_tg:
+    with TaskGroup('extract_and_load') as extract_and_load:
 
         tables = [
             'loaders_calls',
@@ -116,5 +129,19 @@ with DAG(
 
 
         for table in tables:
-            check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old, silver_rename_new = create_tasks_for_table(table)
+            check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old, silver_rename_new, dimension = create_tasks_for_table(table, exception_table = 'loaders_calls')
 
+
+
+
+    update_facts = PythonOperator(
+        task_id=f'update_facts',
+        python_callable=query_clickhouse,
+        op_kwargs={'sql_path': f'dags/sql/loaders/gold/fct_loaders_calls.sql'},
+    )
+
+
+    next_dag = EmptyOperator(task_id="next_dag", dag=dag)
+
+
+    extract_and_load >> update_facts >> next_dag

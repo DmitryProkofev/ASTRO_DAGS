@@ -1,18 +1,16 @@
-#
 
-
-CREATE TABLE gold_layer.dim_loaders_reasons
-(
-    srgt_id UInt32,
-    id UInt32,
-    reason String,
-    reason_full String,
-    target_workshop_id UInt16,
-    updated_at DateTime,
-    updated_etl DateTime('Europe/Samara') DEFAULT now('Europe/Samara')
-) 
-ENGINE = ReplacingMergeTree(updated_etl)
-ORDER BY id;
+--CREATE TABLE gold_layer.dim_loaders_reasons
+--(
+--    srgt_id UInt32,
+--    id UInt32,
+--    reason String,
+--    reason_full String,
+--    target_workshop_id UInt16,
+--    updated_at DateTime,
+--    updated_etl DateTime('Europe/Samara') DEFAULT now('Europe/Samara')
+--) 
+--ENGINE = ReplacingMergeTree(updated_etl)
+--ORDER BY id;
 
 
 INSERT

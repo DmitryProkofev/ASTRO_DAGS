@@ -1,12 +1,11 @@
-#
 
---create table gold_layer.fct_loaders_calls engine=MergeTree order by datetime_key_open as
+
 INSERT INTO gold_layer.fct_loaders_calls
 select
 	lc.id, 
 	dc.DateKey as datetime_key_open,
 	cmg.TimeKey as time_key_open,
-	dpo.id_srgt as customer_id,
+	dpo.id_srgt as customer_id,C:\Users\d.prokofev\VSCodeProjects\AIRFOW_ASTRO\dags\sql\loaders\silver\loaders_calls_silver.sql
 	dlr.srgt_id as reason_id,
 	dlw.srgt_id as workshop_id,
 	dpo2.id_srgt as loader_id,
@@ -42,8 +41,3 @@ left join gold_layer.dim_calendar_minute_grain cmg3 ON
 	cmg3.`Time` = formatDateTime(lc.close_time, '%H:%i')
 left join gold_layer.dim_loaders_call_priorities dlcp ON
 lc.priority = dlcp.id;
-
-
-select * from bronze_layer.loaders_call_priorities lcp;
-
-#TODO поля с предрассчитаныыми данными в слой витрин запилить (cdm-слой)
