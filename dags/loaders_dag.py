@@ -36,6 +36,8 @@ def check_data_exists(sql_path: str):
         logging.error(f"Ошибка выполнения запроса: {e}")
         raise
 
+def skip_dag():
+    return False
 
 def create_tasks_for_table(table_name: str, exception_table=None, task_group_id: str = ""):
     
@@ -54,8 +56,15 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
         provide_context=True
     )
 
-    #TODO тут условие на скип!!! для dimension empty operator, а для facts ShortCircuitOperator
-    skip_path = EmptyOperator(task_id=f"skip_path_{table_name}")  # ✅ уникальный id
+    
+    if table_name != exception_table:
+        skip_path = EmptyOperator(task_id=f"skip_path_{table_name}")  
+    else:
+        skip_path = ShortCircuitOperator(
+        task_id=f'skip_path_{table_name}',
+        python_callable=skip_dag,
+    )
+
 
 
     bronze = PythonOperator(
@@ -117,8 +126,6 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
     else:
 
         dimension = EmptyOperator(task_id=f"skip_dimension_{table_name}")
-
-#TODO тут branche operator
 
 
     end_task = EmptyOperator(
