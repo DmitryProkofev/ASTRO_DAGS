@@ -3,6 +3,12 @@ from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime
 from airflow.operators.empty import EmptyOperator
+from airflow.decorators import task
+from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.python import BranchPythonOperator
+
+
+
 
 def query_clickhouse(sql_path: str = None, sql: str = None):
     from custom_utils.clickhouse_client import ClickHouseClient
@@ -30,12 +36,27 @@ def check_data_exists(sql_path: str):
         logging.error(f"Ошибка выполнения запроса: {e}")
         raise
 
-def create_tasks_for_table(table_name: str, exception_table=None):
-    check = ShortCircuitOperator(
-        task_id=f'check_{table_name}',
-        python_callable=check_data_exists,
-        op_kwargs={'sql_path': f'dags/sql/loaders/check_data/check_{table_name}.sql'},
+
+def create_tasks_for_table(table_name: str, exception_table=None, task_group_id: str = ""):
+    
+    def check_branch_func(**context):
+        from custom_utils.clickhouse_client import ClickHouseClient
+        client = ClickHouseClient(conn_id='click_connect')
+        result = client.query(f'dags/sql/loaders/check_data/check_{table_name}.sql')
+        if result:
+            return f"{task_group_id}.bronze_{table_name}"
+        else:
+            return f"{task_group_id}.skip_path_{table_name}"
+
+    branch = BranchPythonOperator(
+        task_id=f"branch_{table_name}",
+        python_callable=check_branch_func,
+        provide_context=True
     )
+
+    #TODO тут условие на скип!!! для dimension empty operator, а для facts ShortCircuitOperator
+    skip_path = EmptyOperator(task_id=f"skip_path_{table_name}")  # ✅ уникальный id
+
 
     bronze = PythonOperator(
         task_id=f'bronze_{table_name}',
@@ -88,21 +109,29 @@ def create_tasks_for_table(table_name: str, exception_table=None):
     if table_name != exception_table:
 
         dimension = PythonOperator(
-            task_id=f'dimenension_{table_name}',
+            task_id=f'dimension_{table_name}',
             python_callable=query_clickhouse,
             op_kwargs={'sql_path': f'dags/sql/loaders/gold/dim_{table_name}.sql'},
         )
 
     else:
 
-        dimension = EmptyOperator(task_id="next_task", dag=dag)
+        dimension = EmptyOperator(task_id=f"skip_dimension_{table_name}")
+
+#TODO тут branche operator
 
 
-    # Определяем зависимости между задачами одной таблицы
-    check >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> silver >> silver_drop_table >> silver_rename_old >> silver_rename_new >> dimension
+    end_task = EmptyOperator(
+        task_id=f"end_task_{table_name}",
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
+    )
 
-    # Возвращаем все задачи, чтобы потом связать их между собой при необходимости
-    return check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old , silver_rename_new, dimension
+
+    # Ветвление
+    branch >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> silver >> silver_drop_table >> silver_rename_old >> silver_rename_new >> dimension >> end_task
+    branch >> skip_path >> end_task
+
+    return end_task
 
 
 default_args = {
@@ -128,9 +157,11 @@ with DAG(
         ]
 
 
-        for table in tables:
-            check, bronze, bronze_drop_table, bronze_rename_old, bronze_rename_new, silver, silver_drop_table, silver_rename_old, silver_rename_new, dimension = create_tasks_for_table(table, exception_table = 'loaders_calls')
+        final_tasks = []
 
+        for table in tables:
+            final = create_tasks_for_table(table, exception_table='loaders_calls', task_group_id='extract_and_load')
+            final_tasks.append(final)
 
 
 
@@ -138,6 +169,7 @@ with DAG(
         task_id=f'update_facts',
         python_callable=query_clickhouse,
         op_kwargs={'sql_path': f'dags/sql/loaders/gold/fct_loaders_calls.sql'},
+        
     )
 
 

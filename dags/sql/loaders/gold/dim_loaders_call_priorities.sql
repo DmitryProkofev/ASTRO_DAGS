@@ -1,17 +1,16 @@
-#
 
-CREATE TABLE gold_layer.dim_loaders_call_priorities
-(
-    srgt_id UInt32,
-    id UInt32,
-    priority_name String,
-    priority_desc String,
-    emojie String,
-    updated_at DateTime,
-    updated_etl DateTime('Europe/Samara') DEFAULT now('Europe/Samara')
-) 
-ENGINE = ReplacingMergeTree(updated_etl)
-ORDER BY id;
+--CREATE TABLE gold_layer.dim_loaders_call_priorities
+--(
+--    srgt_id UInt32,
+--    id UInt32,
+--    priority_name String,
+--    priority_desc String,
+--    emojie String,
+--    updated_at DateTime,
+--    updated_etl DateTime('Europe/Samara') DEFAULT now('Europe/Samara')
+--) 
+--ENGINE = ReplacingMergeTree(updated_etl)
+--ORDER BY id;
 
 
 

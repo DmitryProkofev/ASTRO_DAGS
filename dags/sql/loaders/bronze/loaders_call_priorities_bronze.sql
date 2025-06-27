@@ -16,7 +16,7 @@ FROM
 	select
 		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_call_priorities);
+		gold_layer.dim_loaders_call_priorities);
 
 
 --RENAME TABLE bronze_layer.loaders_call_priorities TO bronze_layer.loaders_call_priorities_old;

@@ -31,7 +31,7 @@ where
 	select
 		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_calls);
+		gold_layer.fct_loaders_calls);
 
 
 
