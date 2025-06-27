@@ -26,7 +26,7 @@ FROM
 		ROW_NUMBER() OVER (
             PARTITION BY id
 	ORDER BY
-		updated_at DESC
+		update_etl DESC
         ) AS rn
 	FROM
 		bronze_layer.loaders_calls
