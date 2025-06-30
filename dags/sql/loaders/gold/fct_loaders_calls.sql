@@ -1,7 +1,9 @@
 
 --CREATE TABLE gold_layer.fct_loaders_calls engine = MergeTree
 --ORDER BY
---id_oltp AS
+--(assumeNotNull(id_oltp),
+--    assumeNotNull(updated_at),
+--    assumeNotNull(update_etl))  AS
 INSERT INTO gold_layer.fct_loaders_calls
 select
 	lc.id as id_oltp, 
@@ -15,7 +17,7 @@ select
 	cmg2.TimeKey as time_key_taken,
 	c3.DateKey as datetime_key_close,
 	cmg3.TimeKey as time_key_close,
-	dlcp.srgt_id as prority_id,
+	dlcp.srgt_id as priority_id,
 	lc.container_qty as container_qty,
 	lc.updated_at as updated_at,
 	now('Europe/Samara') AS update_etl
@@ -43,5 +45,7 @@ left join gold_layer.dim_calendar_minute_grain cmg3 ON
 	cmg3.`Time` = formatDateTime(lc.close_time, '%H:%i')
 left join gold_layer.dim_loaders_call_priorities dlcp ON
 lc.priority = dlcp.id;
+
+
 
 
