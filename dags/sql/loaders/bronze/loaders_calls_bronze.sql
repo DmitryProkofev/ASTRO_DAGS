@@ -1,9 +1,9 @@
 
+
 --используем инкрементальную загрузку
 create table bronze_layer.loaders_calls_new engine = MergeTree
 order by
 id as
----insert into bronze_layer.loaders_calls 
 SELECT
 	id,
 	open_time,
@@ -26,7 +26,8 @@ FROM
 	'airpegas',
 	'public')
 where
-	close_time is not Null and
+	close_time is not Null
+	and
 	toUnixTimestamp(updated_at) > (
 	select
 		coalesce(max(toUnixTimestamp(updated_at)), 0)
@@ -35,8 +36,8 @@ where
 
 
 
-
 --RENAME TABLE bronze_layer.loaders_calls TO bronze_layer.loaders_calls_old;
 --
 --RENAME TABLE bronze_layer.loaders_calls_new TO bronze_layer.loaders_calls;
+
 
