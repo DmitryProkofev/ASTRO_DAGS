@@ -16,7 +16,7 @@ WHERE
     AND toUnixTimestamp(updated_at) > (
         SELECT
             coalesce(max(toUnixTimestamp(updated_at)), 0)
-        FROM bronze_layer.loaders_calls
+        FROM gold_layer.fct_loaders_calls
     )
 LIMIT 1
 

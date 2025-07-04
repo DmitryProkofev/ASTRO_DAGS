@@ -14,5 +14,5 @@ FROM
 	select
 		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_workshops)
+		gold_layer.dim_loaders_workshops)
 limit 1;

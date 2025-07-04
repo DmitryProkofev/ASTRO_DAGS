@@ -1,6 +1,6 @@
 --- вместо оконки решил использовать другой подход - через группировку, ради разнообразия
 
-CREATE TABLE gold_layer.loaders_call_priorities_actual_new
+CREATE TABLE gold_layer.dim_loaders_call_priorities_actual_new
 ENGINE = MergeTree
 ORDER BY id AS
 SELECT

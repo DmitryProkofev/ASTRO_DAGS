@@ -13,5 +13,5 @@ FROM
 	select
 		coalesce(max(toUnixTimestamp(updated_at)), 0)
 	from
-		bronze_layer.loaders_reasons)
+		gold_layer.dim_loaders_reasons)
 limit 1;

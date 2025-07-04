@@ -115,6 +115,7 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
         op_kwargs={'sql': f'RENAME TABLE silver_layer.{table_name}_new TO silver_layer.{table_name}'},
     )
 
+
     if table_name != exception_table:
 
         dimension = PythonOperator(
@@ -123,9 +124,40 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
             op_kwargs={'sql_path': f'dags/sql/loaders/gold/dim_{table_name}.sql'},
         )
 
+        dimension_actual = PythonOperator(
+        task_id=f'dim_{table_name}_actual',
+        python_callable=query_clickhouse,
+        op_kwargs={'sql_path': f'dags/sql/loaders/dimension_actual/dim_{table_name}_actual.sql'},
+    )
+
+
+        dimension_actual_drop_table = PythonOperator(
+            task_id=f'dim_{table_name}_actual_drop',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql': f'DROP TABLE IF EXISTS gold_layer.dim_{table_name}_actual_old'},
+        )
+
+        dimension_actual_rename_old = PythonOperator(
+            task_id=f'dim_{table_name}_rename_and_swap_1',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql': f'RENAME TABLE gold_layer.dim_{table_name}_actual TO gold_layer.dim_{table_name}_actual_old'},
+        )
+
+
+        dimension_actual_rename_new = PythonOperator(
+            task_id=f'dim_{table_name}_rename_and_swap_2',
+            python_callable=query_clickhouse,
+            op_kwargs={'sql': f'RENAME TABLE gold_layer.dim_{table_name}_actual_new TO gold_layer.dim_{table_name}_actual'},
+        )
+
     else:
 
         dimension = EmptyOperator(task_id=f"skip_dimension_{table_name}")
+        dimension_actual = EmptyOperator(task_id=f"skip_dimension_actual_{table_name}")
+        dimension_actual_drop_table = EmptyOperator(task_id=f"skip_dimension_actual_drop_table_{table_name}")
+        dimension_actual_rename_old = EmptyOperator(task_id=f"skip_dimension_actual_rename_old_{table_name}")
+        dimension_actual_rename_new = EmptyOperator(task_id=f"skip_dimension_actual_rename_new_{table_name}")
+
 
 
     end_task = EmptyOperator(
@@ -133,22 +165,30 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
         trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS
     )
 
+    
 
     # Ветвление
-    branch >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> silver >> silver_drop_table >> silver_rename_old >> silver_rename_new >> dimension >> end_task
-    branch >> skip_path >> end_task
+    (
+    branch >> bronze >> bronze_drop_table >> bronze_rename_old >> bronze_rename_new >> 
+    silver >> silver_drop_table >> silver_rename_old >> silver_rename_new >>  dimension >> dimension_actual >>
+    dimension_actual_drop_table >> dimension_actual_rename_old >>dimension_actual_rename_new
+    >> end_task
+    )
+
+    (branch >> skip_path >> end_task)
+
 
     return end_task
 
 
 default_args = {
-    'start_date': datetime.now(),
+    'start_date': datetime.now(), #datetime(2025, 6, 27, 9, 0)
 }
 
 with DAG(
     dag_id='loaders',
     default_args=default_args,
-    schedule_interval=None,
+    schedule_interval='*/5 * * * *',
     catchup=False,
     tags=['clickhouse'],
 ) as dag:
@@ -183,4 +223,5 @@ with DAG(
     next_dag = EmptyOperator(task_id="next_dag", dag=dag)
 
 
+  
     extract_and_load >> update_facts >> next_dag
