@@ -40,7 +40,8 @@ or dif_time_open_taken < 0 or
 dif_day_taken_close < 0 or dif_time_taken_close < 0 or dif_day_open_close < 0 or dif_time_open_close < 0;
 
 
-
+--- витрина, показывающая моду и медиану по времени работы погрузчиков
+-- в разрезе месяца
 select
 	dpo.operator,
 	dc.`Year`,
@@ -56,13 +57,21 @@ from
 left join gold_layer.dim_calendar dc 
 ON
 	dc.DateKey = lg.datetime_key_open
-left join gold_layer.dim_pa_oper dpo
+left join gold_layer.dim_pa_oper_actual dpo
 ON
 	dpo.id_srgt = lg.loader_id
 group by
 	dpo.operator,
 	dc.`Year`,
-	dc.`Month`;
+	dc.`Month`
+order by
+	operator,
+	`Year`,
+	`Month`
+COMMENT 'Витрина, показывающая моду и медиану по времени работы погрузчиков в разрезе месяца'
 
 
-    
+
+
+
+

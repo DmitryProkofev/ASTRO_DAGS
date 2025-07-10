@@ -613,5 +613,46 @@ TRUNCATE TABLE bronze_layer.loaders_reasons;
 TRUNCATE TABLE bronze_layer.loaders_workshops;
 
 
+TRUNCATE TABLE gold_layer.fct_loaders_calls;
 
-DROP TABLE IF EXISTS bronze_layer.pa_oper_old;
+TRUNCATE TABLE gold_layer.dim_pa_oper;
+TRUNCATE TABLE gold_layer.dim_loaders_call_priorities;
+TRUNCATE TABLE gold_layer.dim_loaders_reasons;
+TRUNCATE TABLE gold_layer.dim_loaders_workshops;
+
+
+select flc.id_oltp, count() from gold_layer.fct_loaders_calls flc 
+group by flc.id_oltp
+having count() > 1;
+
+select * FROM gold_layer.fct_loaders_calls flc 
+where flc.datetime_key_close = 0;
+
+
+
+SELECT
+	id,
+	open_time,
+	customer_id,
+	workshop_id,
+	call_reason_id,
+	comment,
+	loader_id,
+	taken_time,
+	close_time,
+	priority,
+	container_qty,
+	now('Europe/Samara') AS update_data
+FROM
+	postgresql('10.1.11.17:5432',
+	'AGRO',
+	'loader_calls',
+	'airflow_etl',
+	'airpegas',
+	'public')
+where
+	id not in (
+	select
+		id_oltp
+	from
+		gold_layer.fct_loaders_calls);

@@ -182,7 +182,7 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
 
 
 default_args = {
-    'start_date': datetime.now(), #datetime(2025, 6, 27, 9, 0)
+    'start_date': datetime(2025, 4, 7, 11, 10), #datetime(2025, 6, 27, 9, 0)
 }
 
 with DAG(

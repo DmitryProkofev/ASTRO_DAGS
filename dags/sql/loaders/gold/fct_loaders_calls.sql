@@ -27,13 +27,13 @@ left join gold_layer.dim_calendar dc ON
 	dc.`Date` = toDate(formatDateTime(lc.open_time, '%Y-%m-%d'))
 left join gold_layer.dim_calendar_minute_grain cmg ON
 	cmg.`Time` = formatDateTime(lc.open_time, '%H:%i') 
-left join gold_layer.dim_pa_oper dpo ON
+left join gold_layer.dim_pa_oper_actual dpo ON
 lc.customer_id = dpo.tg_id
-left join gold_layer.dim_loaders_reasons dlr ON
+left join gold_layer.dim_loaders_reasons_actual dlr ON
 lc.call_reason_id = dlr.id
-left join gold_layer.dim_loaders_workshops dlw ON
+left join gold_layer.dim_loaders_workshops_actual dlw ON
 lc.workshop_id = dlw.id
-left join gold_layer.dim_pa_oper dpo2 ON
+left join gold_layer.dim_pa_oper_actual dpo2 ON
 lc.loader_id = dpo2.tg_id
 left join gold_layer.dim_calendar c2 ON
 	c2.Date = toDate(formatDateTime(lc.taken_time, '%Y-%m-%d'))
@@ -43,11 +43,6 @@ left join gold_layer.dim_calendar c3 ON
 	c3.`Date` = toDate(formatDateTime(lc.close_time, '%Y-%m-%d'))
 left join gold_layer.dim_calendar_minute_grain cmg3 ON
 	cmg3.`Time` = formatDateTime(lc.close_time, '%H:%i')
-left join gold_layer.dim_loaders_call_priorities dlcp ON
+left join gold_layer.dim_loaders_call_priorities_actual dlcp ON
 lc.priority = dlcp.id;
-
-
-
-
-
 
