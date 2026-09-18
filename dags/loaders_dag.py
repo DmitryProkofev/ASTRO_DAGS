@@ -66,7 +66,6 @@ def create_tasks_for_table(table_name: str, exception_table=None, task_group_id:
     )
 
 
-
     bronze = PythonOperator(
         task_id=f'bronze_{table_name}',
         python_callable=query_clickhouse,
@@ -188,7 +187,7 @@ default_args = {
 with DAG(
     dag_id='loaders',
     default_args=default_args,
-    schedule_interval='*/5 * * * *',
+    schedule='*/30 * * * *',
     catchup=False,
     tags=['clickhouse'],
 ) as dag:
@@ -211,6 +210,7 @@ with DAG(
             final_tasks.append(final)
 
 
+    #TODO DQ на дубликаты по бизнес ключам и на согласованность через check_operator
 
     update_facts = PythonOperator(
         task_id=f'update_facts',

@@ -1,0 +1,8 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+# clickhouse-connect
+# dbt-core
+oracledb==2.4.1
+python-dotenv==1.0.1
+apache-airflow-providers-oracle>=3.0.0
+minio>=7.2.0
+pandas
