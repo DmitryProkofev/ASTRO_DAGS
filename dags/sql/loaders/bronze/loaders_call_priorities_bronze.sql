@@ -1,4 +1,3 @@
-
 CREATE TABLE bronze_layer.loaders_call_priorities_new engine = MergeTree
 ORDER BY
 id AS

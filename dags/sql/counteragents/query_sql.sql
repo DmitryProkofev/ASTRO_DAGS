@@ -1,9 +1,9 @@
 BEGIN;
 
-TRUNCATE TABLE calc.realization;
+TRUNCATE TABLE calc.counteragents;
 
-INSERT INTO calc.realization 
+INSERT INTO calc.counteragents 
 SELECT *, NOW() as updated_ad
-FROM stage.realization;
+FROM stage.counteragents;
 
 COMMIT;

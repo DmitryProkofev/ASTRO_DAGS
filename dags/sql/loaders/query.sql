@@ -621,14 +621,6 @@ TRUNCATE TABLE gold_layer.dim_loaders_reasons;
 TRUNCATE TABLE gold_layer.dim_loaders_workshops;
 
 
-select flc.id_oltp, count() from gold_layer.fct_loaders_calls flc 
-group by flc.id_oltp
-having count() > 1;
-
-select * FROM gold_layer.fct_loaders_calls flc 
-where flc.datetime_key_close = 0;
-
-
 
 SELECT
 	id,

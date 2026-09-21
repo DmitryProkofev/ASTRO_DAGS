@@ -2,6 +2,7 @@
 
 -- выполняем дедубликацию через оконную функцию,
 -- фильтруем тестовые вызовы по id телеги
+-- заменяем null занчения в поле container_qty
 
 
 create table silver_layer.loaders_calls_new engine=MergeTree order by id as 
@@ -16,7 +17,7 @@ SELECT
 	taken_time,
 	close_time,
 	priority,
-	container_qty,
+	ifNull(container_qty, 0) as container_qty,
 	updated_at,
 	now('Europe/Samara') AS update_etl
 FROM

@@ -166,3 +166,49 @@ class OracleDataWriter:
             except Exception as e:
                 logger.error(f"❌ Ошибка пакетной вставки в {table}: {e}")
                 raise
+
+
+    def execute_sql_from_file(self, sql_filename: str, sql_dir: str = None) -> None:
+        """
+        Читает SQL из файла и выполняет его.
+        
+        Args:
+            sql_filename: Имя файла (например, 'merge_data.sql').
+            sql_dir: Путь к папке с SQL. Если None, ищет в папке 'sql' рядом с файлом вызова.
+        """
+        # 1. Гарантируем работу драйвера
+        OracleThickModeManager().ensure()
+
+        # 2. Определяем путь к файлу
+        if not sql_dir:
+            import inspect
+            caller_frame = inspect.stack()[1]
+            caller_path = caller_frame.filename
+            caller_dir = os.path.dirname(caller_path)
+            sql_dir = os.path.join(caller_dir, "sql")
+            
+        file_path = os.path.join(sql_dir, sql_filename)
+        
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"SQL файл не найден: {file_path}")
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            sql_query = f.read()
+
+        logger.info(f"📄 Выполнение SQL из файла: {sql_filename}")
+
+        # 3. Выполняем через Hook
+        hook = OracleHook(oracle_conn_id=self.conn_id)
+        conn = hook.get_conn()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute(sql_query)
+            conn.commit()
+            logger.info(f"✅ SQL выполнен успешно: {sql_filename}")
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"❌ Ошибка выполнения SQL: {e}")
+            raise
+        finally:
+            cursor.close()
