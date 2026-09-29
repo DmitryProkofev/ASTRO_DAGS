@@ -9,7 +9,7 @@ import datetime as dt
 # from oracle_model import Oracle
 # from my_modules import minio_module
 
-CONN_ID = "oracle_test_conn"
+CONN_ID = "oracle_con"
 # --------------------------------------------------
 
 # -----------------------------------------------------------
@@ -148,6 +148,7 @@ def insert_stage_db(ti):
     writer = OracleDataWriter(conn_id=CONN_ID)
             
     target_fields = ["NAME", "MAIL", "WORK_PHONE", "MOBILE", "UUID"]
+
             
     # 3. Вызываем метод записи (валидация и Thick mode произойдут внутри автоматически!)
     writer.insert_multiple_rows(
@@ -217,5 +218,3 @@ with DAG(
 
 
     get_data >> truncate_stage >> insert_stage >> check_quality >> update_data
-
-

@@ -23,9 +23,7 @@ class OracleDataWriter:
         target_fields: List[str],
         commit_every: int = 1000
     ) -> int:
-        """Вставка множества строк через явный executemany() — самый стабильный способ для Oracle Thin mode.
-        Избегает ORA-00984, который возникает при использовании hook.insert_rows().
-        """
+        """Вставка через executemany. Один commit в конце."""
         if not rows:
             logger.warning("Пустой список rows, пропускаем вставку.")
             return 0
@@ -34,40 +32,28 @@ class OracleDataWriter:
             raise ValueError(f"Несоответствие колонок: {len(target_fields)} полей, но {len(rows[0])} значений в строке")
 
         hook = OracleHook(oracle_conn_id=self.conn_id)
-
-        # Формируем SQL вручную
         columns = ', '.join(target_fields)
-        placeholders = ', '.join([':' + str(i+1) for i in range(len(target_fields))])
+        placeholders = ', '.join([f":{i+1}" for i in range(len(target_fields))])
         sql = f"INSERT INTO {table} ({columns}) VALUES ({placeholders})"
 
         try:
-            logger.info(f"Вставка {len(rows)} строк в таблицу {table} (executemany)")
+            logger.info(f"Вставка {len(rows)} строк в таблицу {table} через executemany()")
+            
             conn = hook.get_conn()
             cur = conn.cursor()
             
+            # Один вызов executemany на все строки
             cur.executemany(sql, rows)
             
-            if commit_every >= len(rows):
-                conn.commit()
-                logger.info(f"✅ Успешно вставлено {len(rows)} строк в {table}")
-            else:
-                # commit_every работает как batch size
-                for i in range(0, len(rows), commit_every):
-                    batch = rows[i:i + commit_every]
-                    cur.executemany(sql, batch)
-                    conn.commit()
-                logger.info(f"✅ Успешно вставлено {len(rows)} строк в {table} (batched)")
-
+            conn.commit()
+            logger.info(f"✅ Успешно вставлено {len(rows)} строк в {table}")
+            
             return len(rows)
+            
         except Exception as e:
-            err = str(e).upper()
-            if "ORA-00984" in err:
-                logger.error("ORA-00984: Возможно, в данных есть NULL или несовместимый тип. Проверьте наличие None в строках.")
-            if "ORA-12543" in err or "UNREACHABLE" in err:
-                logger.error("🔴 ORA-12543: База данных недоступна. Проверьте VPN, сеть или параметры подключения.")
-            elif "DPY-2017" in err:
-                logger.error("DPY-2017: Неожиданно вернулся. Сообщите полный лог.")
             logger.error(f"Ошибка вставки в {table}: {e}")
+            if 'conn' in locals():
+                conn.rollback()
             raise
         finally:
             if 'cur' in locals():
