@@ -24,7 +24,8 @@ args = {'owner': 'airflow',
 
 con_data = Variable.get("oracle_connection_pandas")
 path_xcOracle = Variable.get("path_cxOracle")
-oracledb.init_oracle_client(lib_dir=path_xcOracle)
+# oracledb.init_oracle_client(lib_dir=path_xcOracle)  # ← закомментировано. Инициализация теперь только через OracleThickModeManager
+
 engine = sa.create_engine(con_data)
 
 

@@ -1,13 +1,12 @@
 import oracledb
+from airflow.models import Variable
 
-# ----------------------------
-# ENVIRONMENT CONFIGURATION
-# ----------------------------
+# Инициализация Oracle Client теперь происходит централизованно через OracleThickModeManager
+# в my_modules.ora_think_activate.py
+# oracledb.init_oracle_client(lib_dir=...)  # ← УДАЛЕНО
+
 ORACLE_CONNECTION_URI = Variable.get("oracle_connection_pandas")
 engine = create_engine(ORACLE_CONNECTION_URI)
-
-path_xcOracle = Variable.get("path_cxOracle")
-oracledb.init_oracle_client(lib_dir=path_xcOracle)
 
 
 def hello():

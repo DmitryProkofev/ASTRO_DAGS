@@ -13,13 +13,17 @@ from notification_error import on_failure_callback
 
 
 # ----------------------------
+
 # ENVIRONMENT CONFIGURATION
 # ----------------------------
+
 ORACLE_CONNECTION_URI = Variable.get("oracle_connection_pandas")
 engine = create_engine(ORACLE_CONNECTION_URI)
 
 path_xcOracle = Variable.get("path_cxOracle")
-oracledb.init_oracle_client(lib_dir=path_xcOracle)
+# Инициализация Oracle Client теперь происходит централизованно через OracleThickModeManager
+# в my_modules.ora_think_activate.py
+# oracledb.init_oracle_client(lib_dir=path_xcOracle)  # ← УДАЛЕНО, чтобы избежать DPY-2017
 
 ERP_API_URL = "http://192.168.0.112/1c-erp/hs/api/query"
 
